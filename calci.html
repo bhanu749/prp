@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Responsive Calculator</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Configure Tailwind to use 'Inter' font */
+        :root {
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Custom glow effect for dark buttons */
+        .button-glow {
+            transition: all 0.1s ease;
+        }
+        .button-glow:hover {
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.5), 0 0 20px rgba(0, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body class="bg-gray-900 min-h-screen flex items-center justify-center p-4">
+
+    <!-- Calculator Container -->
+    <div id="calculator" class="w-full max-w-sm bg-gray-800 rounded-3xl shadow-2xl p-6 border border-gray-700/50">
+
+        <!-- Display Area -->
+        <div class="mb-6">
+            <div id="previous-display" class="h-6 text-right text-gray-400 text-lg transition-colors duration-200"></div>
+            <div id="current-display" class="h-14 text-right text-white text-5xl font-light overflow-hidden transition-all duration-200">0</div>
+        </div>
+
+        <!-- Buttons Grid -->
+        <div class="grid grid-cols-4 gap-3">
+            <!-- First Row (Control/Clear) -->
+            <button data-action="clear" class="col-span-2 button-glow bg-gray-700/80 text-cyan-400 hover:bg-gray-700/50 font-medium py-4 rounded-xl text-2xl transition-all duration-150">C</button>
+            <button data-action="delete" class="button-glow bg-gray-700/80 text-cyan-400 hover:bg-gray-700/50 font-medium py-4 rounded-xl text-2xl transition-all duration-150">&larr;</button>
+            <button data-operator="divide" class="button-glow bg-cyan-600/90 text-white hover:bg-cyan-600 font-bold py-4 rounded-xl text-2xl transition-all duration-150">/</button>
+
+            <!-- Second Row (7, 8, 9, *) -->
+            <button data-value="7" class="button-glow bg-gray-700 text-white hover:bg-gray-600 py-4 rounded-xl text-2xl transition-all duration-150">7</button>
+            <button data-value="8" class="button-glow bg-gray-700 text-white hover:bg-gray-600 py-4 rounded-xl text-2xl transition-all duration-150">8</button>
+            <button data-value="9" class="button-glow bg-gray-700 text-white hover:bg-gray-600 py-4 rounded-xl text-2xl transition-all duration-150">9</button>
+            <button data-operator="multiply" class="button-glow bg-cyan-600/90 text-white hover:bg-cyan-600 font-bold py-4 rounded-xl text-2xl transition-all duration-150">*</button>
+
+            <!-- Third Row (4, 5, 6, -) -->
+            <button data-value="4" class="button-glow bg-gray-700 text-white hover:bg-gray-600 py-4 rounded-xl text-2xl transition-all duration-150">4</button>
+            <button data-value="5" class="button-glow bg-gray-700 text-white hover:bg-gray-600 py-4 rounded-xl text-2xl transition-all duration-150">5</button>
+            <button data-value="6" class="button-glow bg-gray-700 text-white hover:bg-gray-600 py-4 rounded-xl text-2xl transition-all duration-150">6</button>
+            <button data-operator="subtract" class="button-glow bg-cyan-600/90 text-white hover:bg-cyan-600 font-bold py-4 rounded-xl text-2xl transition-all duration-150">-</button>
+
+            <!-- Fourth Row (1, 2, 3, +) -->
+            <button data-value="1" class="button-glow bg-gray-700 text-white hover:bg-gray-600 py-4 rounded-xl text-2xl transition-all duration-150">1</button>
+            <button data-value="2" class="button-glow bg-gray-700 text-white hover:bg-gray-600 py-4 rounded-xl text-2xl transition-all duration-150">2</button>
+            <button data-value="3" class="button-glow bg-gray-700 text-white hover:bg-gray-600 py-4 rounded-xl text-2xl transition-all duration-150">3</button>
+            <button data-operator="add" class="button-glow bg-cyan-600/90 text-white hover:bg-cyan-600 font-bold py-4 rounded-xl text-2xl transition-all duration-150">+</button>
+
+            <!-- Fifth Row (0, ., =) -->
+            <button data-value="0" class="col-span-2 button-glow bg-gray-700 text-white hover:bg-gray-600 py-4 rounded-xl text-2xl transition-all duration-150">0</button>
+            <button data-value="." class="button-glow bg-gray-700 text-white hover:bg-gray-600 py-4 rounded-xl text-2xl transition-all duration-150">.</button>
+            <button data-action="equals" class="button-glow bg-orange-500/90 text-white hover:bg-orange-500 font-bold py-4 rounded-xl text-2xl transition-all duration-150">=</button>
+        </div>
+    </div>
+
+    <!-- JavaScript Logic -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Get DOM elements
+            const currentDisplay = document.getElementById('current-display');
+            const previousDisplay = document.getElementById('previous-display');
+            const calculator = document.getElementById('calculator');
+
+            // Calculator state
+            let currentOperand = '0';
+            let previousOperand = '';
+            let operation = null;
+            let resultCalculated = false;
+            
+            // Utility function for updating the display
+            const updateDisplay = () => {
+                // Limit the number of digits in the main display
+                if (currentOperand.length > 15) {
+                    currentDisplay.textContent = parseFloat(currentOperand).toExponential(8);
+                } else {
+                    currentDisplay.textContent = currentOperand;
+                }
+                
+                // Update the small previous display
+                if (operation != null) {
+                    // Use standard symbols for display
+                    let symbol = '';
+                    switch (operation) {
+                        case 'add': symbol = '+'; break;
+                        case 'subtract': symbol = '-'; break;
+                        case 'multiply': symbol = '*'; break;
+                        case 'divide': symbol = '/'; break;
+                    }
+                    previousDisplay.textContent = `${previousOperand} ${symbol}`;
+                } else {
+                    previousDisplay.textContent = '';
+                }
+            };
+
+            // 1. Handle number and decimal input
+            const appendNumber = (number) => {
+                if (resultCalculated) {
+                    // Start a new calculation after getting a result
+                    currentOperand = number;
+                    resultCalculated = false;
+                } else if (currentOperand === '0' && number !== '.') {
+                    // Replace initial '0' unless the input is a decimal
+                    currentOperand = number;
+                } else if (number === '.') {
+                    // Prevent multiple decimals
+                    if (!currentOperand.includes('.')) {
+                        currentOperand += number;
+                    }
+                } else {
+                    // Append number, limiting length
+                    if (currentOperand.length < 18) {
+                        currentOperand += number;
+                    }
+                }
+                updateDisplay();
+            };
+
+            // 2. Handle operator selection
+            const chooseOperation = (selectedOperation) => {
+                if (currentOperand === '') return;
+                
+                // If an operation is already set, compute the previous one first
+                if (previousOperand !== '') {
+                    calculate();
+                }
+
+                // Set the new state
+                operation = selectedOperation;
+                previousOperand = currentOperand;
+                currentOperand = '0'; // Ready for next input
+                resultCalculated = false;
+                updateDisplay();
+            };
+
+            // 3. Perform the calculation
+            const calculate = () => {
+                if (operation === null || previousOperand === '') return;
+
+                const prev = parseFloat(previousOperand);
+                const current = parseFloat(currentOperand);
+                let result = 0;
+
+                // Simple error check
+                if (isNaN(prev) || isNaN(current)) return;
+
+                switch (operation) {
+                    case 'add':
+                        result = prev + current;
+                        break;
+                    case 'subtract':
+                        result = prev - current;
+                        break;
+                    case 'multiply':
+                        result = prev * current;
+                        break;
+                    case 'divide':
+                        if (current === 0) {
+                            currentOperand = 'Error: Div by 0';
+                            previousOperand = '';
+                            operation = null;
+                            updateDisplay();
+                            return;
+                        }
+                        result = prev / current;
+                        break;
+                    default:
+                        return;
+                }
+
+                // Format result to a maximum of 10 decimal places to prevent float errors
+                result = parseFloat(result.toFixed(10));
+                
+                currentOperand = result.toString();
+                operation = null;
+                previousOperand = '';
+                resultCalculated = true; // Flag to reset next number input
+                updateDisplay();
+            };
+
+            // 4. Clear all
+            const clear = () => {
+                currentOperand = '0';
+                previousOperand = '';
+                operation = null;
+                resultCalculated = false;
+                updateDisplay();
+            };
+
+            // 5. Delete last digit
+            const deleteDigit = () => {
+                if (resultCalculated) {
+                    // Deleting after a result just clears it
+                    clear();
+                    return;
+                }
+                if (currentOperand.length === 1 || currentOperand === 'Error: Div by 0') {
+                    currentOperand = '0';
+                } else {
+                    currentOperand = currentOperand.slice(0, -1);
+                }
+                updateDisplay();
+            };
+
+
+            // Event Listener for all buttons
+            calculator.addEventListener('click', e => {
+                const target = e.target;
+                
+                // Ensure the clicked element is a button with a data-attribute
+                if (target.tagName !== 'BUTTON') return;
+
+                if (target.dataset.value != null) {
+                    // Number/Decimal button
+                    appendNumber(target.dataset.value);
+                } else if (target.dataset.operator != null) {
+                    // Operator button (+, -, *, /)
+                    chooseOperation(target.dataset.operator);
+                } else if (target.dataset.action === 'equals') {
+                    // Equals button
+                    calculate();
+                } else if (target.dataset.action === 'clear') {
+                    // Clear button
+                    clear();
+                } else if (target.dataset.action === 'delete') {
+                    // Delete button (backspace)
+                    deleteDigit();
+                }
+            });
+
+            // Initial display setup
+            updateDisplay();
+        });
+    </script>
+</body>
+</html>
